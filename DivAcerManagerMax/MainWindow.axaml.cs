@@ -105,6 +105,24 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private ColorPicker _zone3ColorPicker;
     private ColorPicker _zone4ColorPicker;
 
+    // Audio DTS:X controls
+    private TabItem? _audioDtsPanel;
+    private ToggleSwitch? _audioBypassToggleSwitch;
+    private RadioButton? _audioMusicProfileButton;
+    private RadioButton? _audioMovieProfileButton;
+    private RadioButton? _audioFpsProfileButton;
+    private RadioButton? _audioRpgProfileButton;
+    private RadioButton? _audioVoiceProfileButton;
+    private CheckBox? _autoAudioSyncCheckBox;
+    private TextBlock? _audioProfileInfoText;
+    private TextBlock? _audioActivePresetText;
+    private string _currentAudioPreset = "Acer_Predator_DTS_Ultra_Music";
+    private bool _isAudioBypass;
+    private bool _isAutoAudioSync = true;
+    private bool _isUpdatingAudioUi;
+    private static readonly string AudioSettingsFilePath =
+        Path.Combine(AppDataFolderPath, "audio-preset.json");
+
     public MainWindow()
     {
         InitializeComponent();
@@ -128,6 +146,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         BindControls();
         AttachEventHandlers();
+        LoadAudioSettings();
         InitializeAsync();
     }
 
@@ -203,6 +222,18 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _guiVersionTextBlock = nameScope.Find<TextBlock>("ProjectVersionText");
         _daemonErrorGrid = nameScope.Find<Grid>("DaemonErrorGrid");
 
+        // Audio DTS:X controls
+        _audioDtsPanel = nameScope.Find<TabItem>("AudioDtsPanel");
+        _audioBypassToggleSwitch = nameScope.Find<ToggleSwitch>("AudioBypassToggleSwitch");
+        _audioMusicProfileButton = nameScope.Find<RadioButton>("AudioMusicProfileButton");
+        _audioMovieProfileButton = nameScope.Find<RadioButton>("AudioMovieProfileButton");
+        _audioFpsProfileButton = nameScope.Find<RadioButton>("AudioFpsProfileButton");
+        _audioRpgProfileButton = nameScope.Find<RadioButton>("AudioRpgProfileButton");
+        _audioVoiceProfileButton = nameScope.Find<RadioButton>("AudioVoiceProfileButton");
+        _autoAudioSyncCheckBox = nameScope.Find<CheckBox>("AutoAudioSyncCheckBox");
+        _audioProfileInfoText = nameScope.Find<TextBlock>("AudioProfileInfoText");
+        _audioActivePresetText = nameScope.Find<TextBlock>("AudioActivePresetText");
+
         // Set initial GUI version
         if (_guiVersionTextBlock != null)
             _guiVersionTextBlock.Text = $"v{ProjectVersion}";
@@ -258,6 +289,30 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (_backlightTimeoutCheckBox != null) _backlightTimeoutCheckBox.Click += BacklightTimeoutCheckBox_Click;
         if (_lcdOverrideCheckBox != null) _lcdOverrideCheckBox.Click += LcdOverrideCheckBox_Click;
         if (_bootAnimAndSoundCheckBox != null) _bootAnimAndSoundCheckBox.Click += BootSoundCheckBox_Click;
+
+        // Audio DTS:X handlers
+        if (_audioMusicProfileButton != null) _audioMusicProfileButton.IsCheckedChanged += AudioProfileButton_Checked;
+        if (_audioMovieProfileButton != null) _audioMovieProfileButton.IsCheckedChanged += AudioProfileButton_Checked;
+        if (_audioFpsProfileButton != null) _audioFpsProfileButton.IsCheckedChanged += AudioProfileButton_Checked;
+        if (_audioRpgProfileButton != null) _audioRpgProfileButton.IsCheckedChanged += AudioProfileButton_Checked;
+        if (_audioVoiceProfileButton != null) _audioVoiceProfileButton.IsCheckedChanged += AudioProfileButton_Checked;
+
+        if (_audioBypassToggleSwitch != null)
+        {
+            _audioBypassToggleSwitch.PropertyChanged += (s, args) =>
+            {
+                if (args.Property.Name == "IsChecked") AudioBypassToggle_Changed();
+            };
+        }
+
+        if (_autoAudioSyncCheckBox != null)
+        {
+            _autoAudioSyncCheckBox.IsCheckedChanged += (s, e) =>
+            {
+                _isAutoAudioSync = _autoAudioSyncCheckBox.IsChecked == true;
+                SaveAudioSettings();
+            };
+        }
     }
 
     private void UpdateUIElementVisibility()
@@ -797,6 +852,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     "performance" => "Unleashes peak power for extreme tasks, loudest fans.",
                     _ => _thermalProfileInfoText.Text
                 };
+        }
+
+        // Auto-Sync Audio preset based on thermal profile (Scenario Profile)
+        if (_isAutoAudioSync && !_isAudioBypass)
+        {
+            var targetPreset = profile switch
+            {
+                "performance" => "Acer_Predator_DTS_Ultra_Game_FPS",
+                "balanced-performance" => "Acer_Predator_DTS_Ultra_Game_RPG",
+                "balanced" => "Acer_Predator_DTS_Ultra_Music",
+                "quiet" or "low-power" => "Acer_Predator_DTS_Ultra_Voice",
+                _ => "Acer_Predator_DTS_Ultra_Music"
+            };
+            ApplyAudioPreset(targetPreset);
         }
 
         await Task.Delay(1000);
@@ -1425,6 +1494,214 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     public static class AppState
     {
         public static bool DevMode { get; set; }
+    }
+
+    // =========================================================================
+    // Áudio DTS:X Ultra & Acer TrueHarmony Integration
+    // =========================================================================
+
+    private void AudioProfileButton_Checked(object? sender, RoutedEventArgs e)
+    {
+        if (_isUpdatingAudioUi || sender is not RadioButton button || button.IsChecked != true) return;
+
+        var (presetName, description) = button.Name switch
+        {
+            "AudioMusicProfileButton" => ("Acer_Predator_DTS_Ultra_Music", "Deep TruBass, acoustic balance, and linear frequency response."),
+            "AudioMovieProfileButton" => ("Acer_Predator_DTS_Ultra_Movie", "Wide 3D stereo soundstage, crystal-clear voice, and cinema dynamics."),
+            "AudioFpsProfileButton" => ("Acer_Predator_DTS_Ultra_Game_FPS", "Impactful fast bass and 3D spatial positioning for footsteps and gunshots."),
+            "AudioRpgProfileButton" => ("Acer_Predator_DTS_Ultra_Game_RPG", "Atmospheric surround immersion and deep orchestral acoustics."),
+            "AudioVoiceProfileButton" => ("Acer_Predator_DTS_Ultra_Voice", "High-pass filter and maximum vocal clarity for calls and conferences."),
+            _ => ("Acer_Predator_DTS_Ultra_Music", "Deep TruBass, acoustic balance, and linear frequency response.")
+        };
+
+        if (_audioProfileInfoText != null)
+            _audioProfileInfoText.Text = description;
+
+        if (_audioActivePresetText != null)
+        {
+            _audioActivePresetText.Text = presetName;
+            _audioActivePresetText.Foreground = new SolidColorBrush(Color.Parse("#00D2FF"));
+        }
+
+        ApplyAudioPreset(presetName);
+    }
+
+    private void AudioBypassToggle_Changed()
+    {
+        if (_isUpdatingAudioUi || _audioBypassToggleSwitch == null) return;
+        _isAudioBypass = _audioBypassToggleSwitch.IsChecked == true;
+        SetAudioBypass(_isAudioBypass);
+
+        if (_audioActivePresetText != null)
+        {
+            _audioActivePresetText.Text = _isAudioBypass ? "BYPASS (Direct Audio - DTS OFF)" : _currentAudioPreset;
+            _audioActivePresetText.Foreground = _isAudioBypass ? new SolidColorBrush(Color.Parse("#FF5555")) : new SolidColorBrush(Color.Parse("#00D2FF"));
+        }
+    }
+
+    private void ApplyAudioPreset(string presetName, bool save = true)
+    {
+        _currentAudioPreset = presetName;
+        Task.Run(() =>
+        {
+            try
+            {
+                var pBypass = Process.Start(new ProcessStartInfo
+                {
+                    FileName = "flatpak",
+                    Arguments = "run com.github.wwmm.easyeffects -b 2",
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                });
+                pBypass?.WaitForExit(1000);
+
+                var pLoad = Process.Start(new ProcessStartInfo
+                {
+                    FileName = "flatpak",
+                    Arguments = $"run com.github.wwmm.easyeffects -l {presetName}",
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                });
+                pLoad?.WaitForExit(2000);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[DAMX Audio] Error setting preset: {ex.Message}");
+            }
+        });
+
+        if (save)
+        {
+            SaveAudioSettings();
+        }
+
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            _isUpdatingAudioUi = true;
+            try
+            {
+                if (_audioActivePresetText != null)
+                {
+                    _audioActivePresetText.Text = presetName;
+                    _audioActivePresetText.Foreground = new SolidColorBrush(Color.Parse("#00D2FF"));
+                }
+                if (_audioBypassToggleSwitch != null)
+                {
+                    _audioBypassToggleSwitch.IsChecked = false;
+                }
+                UpdateAudioRadioButtons(presetName);
+            }
+            finally
+            {
+                _isUpdatingAudioUi = false;
+            }
+        });
+    }
+
+    private void SetAudioBypass(bool bypass, bool save = true)
+    {
+        _isAudioBypass = bypass;
+        Task.Run(() =>
+        {
+            try
+            {
+                string mode = bypass ? "1" : "2";
+                var p = Process.Start(new ProcessStartInfo
+                {
+                    FileName = "flatpak",
+                    Arguments = $"run com.github.wwmm.easyeffects -b {mode}",
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                });
+                p?.WaitForExit(1000);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[DAMX Audio] Error setting bypass: {ex.Message}");
+            }
+        });
+
+        if (save)
+        {
+            SaveAudioSettings();
+        }
+    }
+
+    private void SaveAudioSettings()
+    {
+        try
+        {
+            Directory.CreateDirectory(AppDataFolderPath);
+            var json = $"{{\n  \"preset\": \"{_currentAudioPreset}\",\n  \"bypass\": {_isAudioBypass.ToString().ToLower()},\n  \"auto_sync\": {(_autoAudioSyncCheckBox?.IsChecked == true).ToString().ToLower()}\n}}";
+            File.WriteAllText(AudioSettingsFilePath, json);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[DAMX Audio] Error saving audio settings: {ex.Message}");
+        }
+    }
+
+    private void LoadAudioSettings()
+    {
+        _isUpdatingAudioUi = true;
+        try
+        {
+            if (File.Exists(AudioSettingsFilePath))
+            {
+                var content = File.ReadAllText(AudioSettingsFilePath);
+                var mPreset = System.Text.RegularExpressions.Regex.Match(content, "\"preset\":\\s*\"([^\"]+)\"");
+                if (mPreset.Success) _currentAudioPreset = mPreset.Groups[1].Value;
+
+                var mBypass = System.Text.RegularExpressions.Regex.Match(content, "\"bypass\":\\s*(true|false)");
+                if (mBypass.Success) _isAudioBypass = mBypass.Groups[1].Value == "true";
+
+                var mSync = System.Text.RegularExpressions.Regex.Match(content, "\"auto_sync\":\\s*(true|false)");
+                if (mSync.Success) _isAutoAudioSync = mSync.Groups[1].Value == "true";
+            }
+
+            if (_autoAudioSyncCheckBox != null)
+                _autoAudioSyncCheckBox.IsChecked = _isAutoAudioSync;
+
+            if (_audioBypassToggleSwitch != null)
+                _audioBypassToggleSwitch.IsChecked = _isAudioBypass;
+
+            UpdateAudioRadioButtons(_currentAudioPreset);
+            if (_audioActivePresetText != null)
+            {
+                _audioActivePresetText.Text = _isAudioBypass ? "BYPASS (Direct Audio - DTS OFF)" : _currentAudioPreset;
+                _audioActivePresetText.Foreground = _isAudioBypass ? new SolidColorBrush(Color.Parse("#FF5555")) : new SolidColorBrush(Color.Parse("#00D2FF"));
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[DAMX Audio] Error loading audio settings: {ex.Message}");
+        }
+        finally
+        {
+            _isUpdatingAudioUi = false;
+        }
+    }
+
+    private void UpdateAudioRadioButtons(string presetName)
+    {
+        if (_audioMusicProfileButton != null) _audioMusicProfileButton.IsChecked = presetName == "Acer_Predator_DTS_Ultra_Music";
+        if (_audioMovieProfileButton != null) _audioMovieProfileButton.IsChecked = presetName == "Acer_Predator_DTS_Ultra_Movie";
+        if (_audioFpsProfileButton != null) _audioFpsProfileButton.IsChecked = presetName == "Acer_Predator_DTS_Ultra_Game_FPS";
+        if (_audioRpgProfileButton != null) _audioRpgProfileButton.IsChecked = presetName == "Acer_Predator_DTS_Ultra_Game_RPG";
+        if (_audioVoiceProfileButton != null) _audioVoiceProfileButton.IsChecked = presetName == "Acer_Predator_DTS_Ultra_Voice";
+
+        if (_audioProfileInfoText != null)
+        {
+            _audioProfileInfoText.Text = presetName switch
+            {
+                "Acer_Predator_DTS_Ultra_Music" => "Deep TruBass, acoustic balance, and linear frequency response.",
+                "Acer_Predator_DTS_Ultra_Movie" => "Wide 3D stereo soundstage, crystal-clear voice, and cinema dynamics.",
+                "Acer_Predator_DTS_Ultra_Game_FPS" => "Impactful fast bass and 3D spatial positioning for footsteps and gunshots.",
+                "Acer_Predator_DTS_Ultra_Game_RPG" => "Atmospheric surround immersion and deep orchestral acoustics.",
+                "Acer_Predator_DTS_Ultra_Voice" => "High-pass filter and maximum vocal clarity for calls and conferences.",
+                _ => "Deep TruBass, acoustic balance, and linear frequency response."
+            };
+        }
     }
 
     #region INotifyPropertyChanged

@@ -558,6 +558,132 @@
                     </ScrollViewer>
                 </TabItem>
 
+                <!-- Audio DTS:X Ultra Tab -->
+                <TabItem Header="Audio DTS:X" x:Name="AudioDtsPanel">
+                    <ScrollViewer>
+                        <StackPanel Margin="10,0,20,0">
+                            <TextBlock Text="Audio DTS:X Ultra &amp; TrueHarmony" Classes="SectionHeader" />
+
+                            <!-- Acoustic Engine Mode / Bypass Card -->
+                            <Border Classes="Card" x:Name="AudioBypassCard">
+                                <StackPanel>
+                                    <Grid ColumnDefinitions="*,Auto" Margin="0 0 0 10">
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="DTS:X Ultra Acoustic Engine" Classes="SubHeader" />
+                                            <TextBlock Text="OEM laboratory calibrated acoustic filters for Predator Helios Neo 16 chassis."
+                                                       Opacity="0.7" Margin="0 5 0 0" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <ToggleSwitch x:Name="AudioBypassToggleSwitch" Grid.Column="1"
+                                                      VerticalAlignment="Center" IsChecked="False"
+                                                      OffContent="DTS Ultra Active" OnContent="Direct Bypass" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Audio Presets Card -->
+                            <Border Classes="Card" x:Name="AudioProfilesCard">
+                                <StackPanel>
+                                    <TextBlock Text="Equalization &amp; Spatiality Profiles" Classes="SubHeader" />
+                                    <TextBlock Text="Select official Acer calibrated acoustic curves powered by PipeWire &amp; EasyEffects:"
+                                               Opacity="0.7" Margin="0 0 0 15" />
+
+                                    <Grid ColumnDefinitions="Auto,*" Margin="0 10">
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0 5 0 0" HorizontalAlignment="Center">
+                                            <RadioButton x:Name="AudioMusicProfileButton" GroupName="AudioProfileGroup"
+                                                         Margin="0 0 15 0" IsChecked="True">
+                                                <StackPanel>
+                                                    <material:MaterialIcon Kind="MusicNote" Width="48" Height="48" />
+                                                    <TextBlock Text="Music" HorizontalAlignment="Center" />
+                                                </StackPanel>
+                                            </RadioButton>
+
+                                            <RadioButton x:Name="AudioMovieProfileButton" GroupName="AudioProfileGroup"
+                                                         Margin="0 0 15 0">
+                                                <StackPanel>
+                                                    <material:MaterialIcon Kind="Movie" Width="48" Height="48" />
+                                                    <TextBlock Text="Movie" HorizontalAlignment="Center" />
+                                                </StackPanel>
+                                            </RadioButton>
+
+                                            <RadioButton x:Name="AudioFpsProfileButton" GroupName="AudioProfileGroup"
+                                                         Margin="0 0 15 0">
+                                                <StackPanel>
+                                                    <material:MaterialIcon Kind="Crosshairs" Width="48" Height="48" />
+                                                    <TextBlock Text="FPS Game" HorizontalAlignment="Center" />
+                                                </StackPanel>
+                                            </RadioButton>
+
+                                            <RadioButton x:Name="AudioRpgProfileButton" GroupName="AudioProfileGroup"
+                                                         Margin="0 0 15 0">
+                                                <StackPanel>
+                                                    <material:MaterialIcon Kind="GamepadVariant" Width="48" Height="48" />
+                                                    <TextBlock Text="RPG Game" HorizontalAlignment="Center" />
+                                                </StackPanel>
+                                            </RadioButton>
+
+                                            <RadioButton x:Name="AudioVoiceProfileButton" GroupName="AudioProfileGroup"
+                                                         Margin="0 0 15 0">
+                                                <StackPanel>
+                                                    <material:MaterialIcon Kind="Microphone" Width="48" Height="48" />
+                                                    <TextBlock Text="Voice" HorizontalAlignment="Center" />
+                                                </StackPanel>
+                                            </RadioButton>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <TextBlock x:Name="AudioProfileInfoText" Opacity="0.7"
+                                               Text="Deep TruBass, acoustic balance, and linear frequency response."
+                                               HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Margin="0 10 0 0" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Scenario Profile Link Card -->
+                            <Border Classes="Card" x:Name="AudioScenarioCard">
+                                <StackPanel>
+                                    <TextBlock Text="Scenario Profile Link (Auto-Sync)" Classes="SubHeader" />
+                                    <TextBlock Text="Automatically adapt audio profiles when switching performance thermal modes:"
+                                               Opacity="0.7" Margin="0 0 0 10" />
+
+                                    <CheckBox x:Name="AutoAudioSyncCheckBox"
+                                              Content="Link Audio Preset to Performance Thermal Profile"
+                                              IsChecked="True" Margin="0 5" />
+
+                                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" Margin="10 10 0 0">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="• Turbo (115W):" FontWeight="SemiBold" Width="130" Margin="0 3 0 0" />
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="FPS Game (Footsteps &amp; directional gunshots)" Margin="0 3 0 0" Opacity="0.8" />
+
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="• Performance:" FontWeight="SemiBold" Width="130" Margin="0 3 0 0" />
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="RPG Game (Deep orchestral immersion)" Margin="0 3 0 0" Opacity="0.8" />
+
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="• Balanced:" FontWeight="SemiBold" Width="130" Margin="0 3 0 0" />
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="Music (TruBass dynamic acoustic balance)" Margin="0 3 0 0" Opacity="0.8" />
+
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="• Quiet / Eco:" FontWeight="SemiBold" Width="130" Margin="0 3 0 0" />
+                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="Voice (Speech clarity &amp; high-pass filtering)" Margin="0 3 0 0" Opacity="0.8" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- PipeWire & EasyEffects Status Card -->
+                            <Border Classes="Card" x:Name="AudioStatusCard">
+                                <StackPanel>
+                                    <TextBlock Text="Acoustic Engine Status" Classes="SubHeader" />
+                                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" Margin="0 10">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Backend:" FontWeight="SemiBold" Width="130" Margin="0 5 0 0" />
+                                        <TextBlock x:Name="AudioBackendText" Grid.Row="0" Grid.Column="1" Text="PipeWire / EasyEffects Flatpak" Margin="5 5 0 0" />
+
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Active Preset:" FontWeight="SemiBold" Width="130" Margin="0 5 0 0" />
+                                        <TextBlock x:Name="AudioActivePresetText" Grid.Row="1" Grid.Column="1" Text="Acer_Predator_DTS_Ultra_Music" Foreground="#00D2FF" Margin="5 5 0 0" />
+
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="DTS Tuning:" FontWeight="SemiBold" Width="130" Margin="0 5 0 0" />
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="Predator Helios Neo 16 (Subsystem 10251830 - Macan_ARX)" Margin="5 5 0 0" Opacity="0.8" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
                 <!-- System Settings Tab -->
                 <TabItem Header="System Settings" x:Name="SystemSettingsPanel">
                     <ScrollViewer>
